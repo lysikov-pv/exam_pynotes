@@ -13,6 +13,7 @@
 
 import os
 from datetime import datetime
+DB_PATH = 'db.csv'
 
 class Note:
     def __init__(self, id, dtime, header, txt):
@@ -28,11 +29,39 @@ class Note:
         preview = self.txt[:length] + '...' if len(self.txt) > length else self.txt.ljust(length + 3)
         return preview.replace("\n", " ").replace("\r", "").replace("\t", " ")
 
+def read_file():
+    with open(DB_PATH, 'r') as f:
+        for line in f:
+            arr = line.replace('\\n', '\n').split(';')
+            notes.append(Note(arr[0], arr[1], arr[2], arr[3]))
+
+def save_file():
+    with open(DB_PATH, 'w') as f:
+        for note in notes:
+            print(note.id + ';' + \
+                note.dtime + ';' + \
+                note.header + ';' + \
+                note.txt.replace('\n', '\\n') + ';', file=f)
+
 def sort_notes(type, reverse=False):
     if type == 'by_id':
         return sorted(notes, key=lambda note: note.id, reverse=reverse)
     elif type == 'by_date':
         return sorted(notes, key=lambda note: datetime.strptime(note.dtime, "%d.%m.%y %H:%M:%S"), reverse=reverse)
+
+def find_notes(str):
+    result = []
+    for note in notes:
+        if str.lower() in note.header.lower() or str.lower() in note.txt.lower():
+            result.append(note)
+    return result
+
+def find_notes(start_date, end_date):
+    result = []
+    for note in notes:
+        if datetime.strptime(start_date, "%d.%m.%y %H:%M:%S") < datetime.strptime(note.dtime, "%d.%m.%y %H:%M:%S") < datetime.strptime(end_date, "%d.%m.%y %H:%M:%S"):
+            result.append(note)
+    return result
 
 def next_id():
     id = 1
@@ -72,6 +101,17 @@ def grey(str):
     ANSI_GREY = '\u001b[30;1m'
     return ANSI_GREY + str + ANSI_RESET
 
+def multi_input(str):
+    print(str)
+    lines = []
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            break
+        lines.append(line)
+    return '\n'.join(lines)
+
 # Основное меню
 def main_menu():
     MENU_TXT = \
@@ -79,7 +119,7 @@ def main_menu():
         '   1.1 Новые вначале \n' + \
         '   1.2 Старые вначале \n' + \
         '2 Поиск \n' + \
-        '   2.1 По названию \n' + \
+        '   2.1 По тексту \n' + \
         '   2.2 По дате \n' + \
         '3. Новая заметка \n' + \
         '0. Выход \n' + \
@@ -100,26 +140,29 @@ def main_menu():
             i = int(input(grey('Выберите заметку: ')))
             if 0 < i <= len(sorted_notes):
                 note_menu(sorted_notes[i - 1])
-        elif input_num == '2.1':  # Найти по заголовку
-            print_note('find_header')
+        elif input_num == '2.1':  # Найти по тексту
+            os.system('cls')
+            str = input(grey('Строка для поиска: '))
+            finded_notes=find_notes(str) 
+            print_notes(finded_notes)
+            i = int(input(grey('Выберите заметку: ')))
+            if 0 < i <= len(finded_notes):
+                note_menu(finded_notes[i - 1])
         elif input_num == '2.2':  # Найти по дате
-            print_note('find_dtime')
+            os.system('cls')
+            start_date = input(grey('Дата начала интервала (дд.мм.гг чч:мм:сс): '))
+            end_date = input(grey('Дата окончания интервала (дд.мм.гг чч:мм:сс): '))
+            finded_notes=find_notes(start_date, end_date) 
+            print_notes(finded_notes)
+            i = int(input(grey('Выберите заметку: ')))
+            if 0 < i <= len(finded_notes):
+                note_menu(finded_notes[i - 1])
         elif input_num == '3':  # Новая заметка
             new_note()
+            save_file()
         elif input_num == '0':  # Назад
             break    
         # input('Нажмите Enter для продолжения...')
-
-def multi_input(str):
-    print(str)
-    lines = []
-    while True:
-        try:
-            line = input()
-        except EOFError:
-            break
-        lines.append(line)
-    return '\n'.join(lines)
 
 # Меню заметки
 def note_menu(note):
@@ -138,27 +181,30 @@ def note_menu(note):
         input_num = input(grey(MENU_TXT))
         if input_num == '1':  # Редактировать
             edit_note(note)
+            save_file()
             break
         elif input_num == '2':  # Удалить
             notes.remove(note)
+            save_file()
             break
         elif input_num == '0':  # Назад
             break
-
-notes = [Note('001', \
-            '12.12.22 10:23:12', \
-            'Очень длинное название ...........................................................................', \
-            'Очень длинное содержание ...........................................................................'),
-        Note('002', \
-            '12.11.22 09:11:36', \
-            'Другое очень длинное название ...........................................................................', \
-            'Другое очень длинное содержание ...........................................................................'),
-        Note('003', \
-            '12.12.22 08:11:36', \
-            'Третье очень длинное название ...........................................................................', \
-            'Третье очень длинное содержание ..............................\n...........................................'),
-        Note('004', \
-            '01.12.22 10:10:36', \
-            'Другое очень длинное название ...........................................................................', \
-            'Другое очень длинное содержание ...........................................................................')]
+notes = []
+# notes = [Note('001', \
+#             '12.12.22 10:23:12', \
+#             'Очень длинное название ...........................................................................', \
+#             'Очень длинное содержание ...........................................................................'),
+#         Note('002', \
+#             '12.11.22 09:11:36', \
+#             'Другое очень длинное название ...........................................................................', \
+#             'Другое очень длинное содержание ...........................................................................'),
+#         Note('003', \
+#             '12.12.22 08:11:36', \
+#             'Третье очень длинное название ...........................................................................', \
+#             'Третье очень длинное содержание ..............................\n...........................................'),
+#         Note('004', \
+#             '01.12.22 10:10:36', \
+#             'Другое очень длинное название ...........................................................................', \
+#             'Другое очень длинное содержание ...........................................................................')]
+read_file()
 main_menu()

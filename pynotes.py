@@ -30,13 +30,13 @@ class Note:
         return preview.replace("\n", " ").replace("\r", "").replace("\t", " ")
 
 def read_file():
-    with open(DB_PATH, 'r') as f:
+    with open(DB_PATH, 'r', encoding='utf-8') as f:
         for line in f:
             arr = line.replace('\\n', '\n').split(';')
             notes.append(Note(arr[0], arr[1], arr[2], arr[3]))
 
 def save_file():
-    with open(DB_PATH, 'w') as f:
+    with open(DB_PATH, 'w', encoding='utf-8') as f:
         for note in notes:
             print(note.id + ';' + \
                 note.dtime + ';' + \
@@ -49,14 +49,14 @@ def sort_notes(type, reverse=False):
     elif type == 'by_date':
         return sorted(notes, key=lambda note: datetime.strptime(note.dtime, "%d.%m.%y %H:%M:%S"), reverse=reverse)
 
-def find_notes(str):
+def find_by_str(str):
     result = []
     for note in notes:
         if str.lower() in note.header.lower() or str.lower() in note.txt.lower():
             result.append(note)
     return result
 
-def find_notes(start_date, end_date):
+def find_by_date(start_date, end_date):
     result = []
     for note in notes:
         if datetime.strptime(start_date, "%d.%m.%y %H:%M:%S") < datetime.strptime(note.dtime, "%d.%m.%y %H:%M:%S") < datetime.strptime(end_date, "%d.%m.%y %H:%M:%S"):
@@ -143,7 +143,7 @@ def main_menu():
         elif input_num == '2.1':  # Найти по тексту
             os.system('cls')
             str = input(grey('Строка для поиска: '))
-            finded_notes=find_notes(str) 
+            finded_notes=find_by_str(str) 
             print_notes(finded_notes)
             i = int(input(grey('Выберите заметку: ')))
             if 0 < i <= len(finded_notes):
@@ -152,7 +152,7 @@ def main_menu():
             os.system('cls')
             start_date = input(grey('Дата начала интервала (дд.мм.гг чч:мм:сс): '))
             end_date = input(grey('Дата окончания интервала (дд.мм.гг чч:мм:сс): '))
-            finded_notes=find_notes(start_date, end_date) 
+            finded_notes=find_by_date(start_date, end_date) 
             print_notes(finded_notes)
             i = int(input(grey('Выберите заметку: ')))
             if 0 < i <= len(finded_notes):
